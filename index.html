@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Polynomials — 50-item Exam</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    /* Chalkboard background (online image) */
+    body {
+      background: url('https://images.unsplash.com/photo-1509228627152-50c2d5f0f2b1?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&s=3c7d9d76f7e1459e1d6e1b9a6e2db8d6') center/cover fixed no-repeat;
+      font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      padding: 24px;
+    }
+
+    /* translucent exam panel */
+    .exam-container {
+      max-width: 1000px;
+      margin: 2.2rem auto;
+      background: rgba(255,255,255,0.96);
+      padding: 30px 34px;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(10,20,40,0.18);
+    }
+
+    h1 {
+      text-align:center;
+      font-weight:700;
+      color:#1d3557;
+      margin-bottom: 6px;
+      font-size: 1.6rem;
+    }
+
+    p.instruction {
+      text-align:center;
+      color:#444;
+      margin-bottom: 18px;
+      font-weight:600;
+    }
+
+    ol { padding-left: 1.2rem; }
+    li { margin: 1.2rem 0; padding-bottom: 0.2rem; }
+
+    /* Inputs */
+    input[type="text"] { width: 340px; display:inline-block; padding:6px 8px; }
+    .form-check-inline { margin-right: 1.6rem; margin-bottom:0.7rem; }
+
+    /* spacing tweaks for readability */
+    .question-row { display:flex; flex-wrap:wrap; align-items:flex-start; gap:12px; }
+    .options-wrap { display:flex; flex-wrap:wrap; gap:14px 22px; margin-top:8px; }
+
+    .separator {
+      margin: 18px 0;
+      text-align: center;
+      color: #495057;
+      font-weight: 600;
+      font-style: italic;
+    }
+    .separator:before, .separator:after {
+      content: "—––––––––––";
+      margin: 0 8px;
+      color: #98a6ad;
+      font-weight: 400;
+    }
+
+    .btn-submit {
+      display:block;
+      margin: 22px auto 0;
+      background:#1d3557;
+      color:#fff;
+      border:none;
+      padding: .7rem 1.6rem;
+      border-radius: 28px;
+      font-size:1.05rem;
+    }
+
+    /* Feedback styles */
+    .feedback-wrap { margin-left: 0px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+    .student { font-weight:600; color:#333; background:#fff8db; padding:6px 10px; border-radius:6px; border:1px solid #ffe7a3; }
+    .correct { font-weight:700; color:#0b6623; background:#ecf9f0; padding:6px 10px; border-radius:6px; border:1px solid #bfe9c9; }
+    .incorrect { font-weight:700; color:#8b1d1d; background:#fff0f0; padding:6px 10px; border-radius:6px; border:1px solid #f2c6c6; }
+    .answer-label { color: #666; font-size: .92rem; margin-right:6px; }
+    .scoreBox { margin-top: 18px; padding:12px; border-radius:8px; font-weight:700; color:#0b6623; background: linear-gradient(90deg,#ecf9f0,#f0f9ff); border:1px solid #cfeee0; text-align:center; }
+    @media (max-width:820px) {
+      input[type="text"]{ width: 100%; }
+      .options-wrap { gap:10px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="exam-container">
+    <h1>Polynomials — 50 Items</h1>
+    <p class="instruction">Answer all questions correctly.</p>
+
+    <form id="examForm" autocomplete="off">
+
+      <!-- Multiple Choice 1..20 -->
+      <ol id="mcqList" start="1"></ol>
+
+      <div class="separator">End of Multiple Choice</div>
+
+      <!-- True / False 21..35 -->
+      <ol id="tfList" start="21"></ol>
+
+      <div class="separator">End of True / False</div>
+
+      <!-- Solving 36..50 -->
+      <ol id="solveList" start="36"></ol>
+
+      <button type="button" class="btn-submit" onclick="checkAnswers()">Submit</button>
+    </form>
+  </div>
+
+<script>
+/* ---------------- Utilities ---------------- */
+function toSup(s){
+  if (s===undefined || s===null) return s;
+  return String(s)
+    .replace(/\^2/g, "²").replace(/\^3/g, "³").replace(/\^4/g, "⁴")
+    .replace(/\^5/g, "⁵").replace(/\^6/g, "⁶").replace(/\^7/g, "⁷")
+    .replace(/\^8/g, "⁸").replace(/\^9/g, "⁹");
+}
+// normalize: remove spaces, lowercase (also accept superscripts)
+function normalize(s){
+  if (s===undefined || s===null) return "";
+  s = String(s).trim();
+  s = s.replace(/\s+/g, "");
+  // convert caret to superscript (if user typed caret accidentally)
+  s = s.replace(/\^2/g,"²").replace(/\^3/g,"³").replace(/\^4/g,"⁴")
+       .replace(/\^5/g,"⁵").replace(/\^6/g,"⁶").replace(/\^7/g,"⁷")
+       .replace(/\^8/g,"⁸").replace(/\^9/g,"⁹");
+  return s.toLowerCase();
+}
+
+/* ---------------- Questions & answers (triple-checked) ----------------
+   Multiple Choice 1..20, True/False 21..35, Solve 36..50
+   All display strings use superscripts already (x² etc.).
+*/
+
+/* MCQ array (20 items) */
+const mcq = [
+  { q:"(2x)(3x) =", choices:["5x²","6x²","6x","5x"], a:"6x²" },
+  { q:"(x+2)(x+3) =", choices:["x²+5x+6","x²+6x+5","x²+5x-6","x²-5x+6"], a:"x²+5x+6" },
+  { q:"(2x+1)(x-4) =", choices:["2x²-7x-4","2x²-8x-4","2x²+7x-4","2x²-7x+4"], a:"2x²-7x-4" },
+  { q:"(3x)(-2x²) =", choices:["-6x³","6x³","-5x³","-6x²"], a:"-6x³" },
+  { q:"(x+5)(x-5) =", choices:["x²+25","x²-25","x²-10x+25","x²+10x-25"], a:"x²-25" },
+  { q:"(x+3)² =", choices:["x²+6x+9","x²+3x+9","x²+9x+9","x²+6x+3"], a:"x²+6x+9" },
+  { q:"(2x-3)² =", choices:["4x²-12x+9","4x²+12x+9","4x²-6x+9","4x²-12x-9"], a:"4x²-12x+9" },
+  { q:"3x(x²+2x+1) =", choices:["3x³+6x²+3x","3x³+6x+3","3x²+6x+3x","3x³+2x²+3x"], a:"3x³+6x²+3x" },
+  { q:"(x-1)(x²+x+1) =", choices:["x³-1","x³+1","x³-x","x³+x"], a:"x³-1" },
+  { q:"Factor: x²+5x+6 =", choices:["(x+2)(x+3)","(x+1)(x+6)","(x-2)(x-3)","(x+3)(x+3)"], a:"(x+2)(x+3)" },
+  { q:"Factor: x² - x - 6 =", choices:["(x-3)(x+2)","(x+3)(x-2)","(x-6)(x+1)","prime"], a:"(x-3)(x+2)" },
+  { q:"Factor (a≠1): 2x²+5x+3 =", choices:["(2x+3)(x+1)","(2x+1)(x+3)","(x+3)(2x+1)","prime"], a:"(2x+3)(x+1)" },
+  { q:"Factor: 6x²+11x+3 =", choices:["(3x+1)(2x+3)","(6x+1)(x+3)","(2x+1)(3x+3)","prime"], a:"(3x+1)(2x+3)" },
+  { q:"Factor by grouping: x³+3x²+x+3 =", choices:["(x+3)(x²+1)","(x+1)(x²+3)","(x²+3x)(x+1)","prime"], a:"(x+3)(x²+1)" },
+  { q:"Factor by grouping: 2x³+4x²+x+2 =", choices:["(x+2)(2x²+1)","(2x+1)(x²+2)","(2x²+1)(x+2)","prime"], a:"(x+2)(2x²+1)" },
+  { q:"(x+4)² expands to =", choices:["x²+8x+16","x²+4x+16","x²+8x+4","x²+16x+16"], a:"x²+8x+16" },
+  { q:"(x-3)² expands to =", choices:["x²-6x+9","x²-3x+9","x²+6x+9","x²-9"], a:"x²-6x+9" },
+  { q:"(2x+3)(2x-3) =", choices:["4x²-9","4x²+9","4x²-6x+9","4x²+6x-9"], a:"4x²-9" },
+  { q:"Solve by factoring: x²-9=0 → x =", choices:["±3","3 only","-3 only","0"], a:"±3" },
+  { q:"(x+2)(x+3)(x+1) — simplify (x+2)(x+3) first =", choices:["x²+5x+6","x²+6x+5","x²+4x+3","x²-5x+6"], a:"x²+5x+6" }
+];
+
+/* TF array (15 items) */
+const tf = [
+  { q:"(x+2)² = x² + 4x + 4", a:"True" },
+  { q:"(x-2)² = x² - 4x + 4", a:"True" },
+  { q:"(a+b)(a-b) = a² - b²", a:"True" },
+  { q:"2x² + 5x + 3 = (2x+3)(x+1)", a:"True" },
+  { q:"x² + 6x + 9 = (x+3)²", a:"True" },
+  { q:"x³ + 1 = (x+1)(x² - x + 1)", a:"True" },
+  { q:"x³ - 1 = (x-1)(x² + x + 1)", a:"True" },
+  { q:"4x² - 12x + 9 = (2x-3)²", a:"True" },
+  { q:"6x² + 11x + 3 is prime over integers", a:"False" },
+  { q:"(x+1)(x² - x + 1) = x³ + 1", a:"True" },
+  { q:"(2x+1)(x+3) = 2x² + 7x + 3", a:"True" },
+  { q:"(x+2)(x+3) = x² + 6x + 5", a:"True" },
+  { q:"Factor by grouping always works for any 4-term polynomial", a:"False" },
+  { q:"(x+2)² = x² + 2x + 4", a:"False" },
+  { q:"If (a+b)² = a² + b², then ab = 0", a:"True" }
+];
+
+/* Solve array (15 items) */
+const solve = [
+  { q:"Solve: x² + 5x + 6 = 0", a:"x=-2,x=-3" },
+  { q:"Solve: 2x² + 5x + 3 = 0", a:"x=-3/2,x=-1" },
+  { q:"Solve: x² - x - 6 = 0", a:"x=3,x=-2" },
+  { q:"Solve: x² - 9 = 0", a:"x=3,x=-3" },
+  { q:"Solve: x² + 6x + 9 = 0", a:"x=-3" },
+  { q:"Solve: (x+2)(x+3) = 0", a:"x=-2,x=-3" },
+  { q:"Solve: 4x² - 12x + 9 = 0", a:"x=3/2" },
+  { q:"Solve: x³ - 1 = 0 (real roots only)", a:"x=1" },
+  { q:"Solve: x² - 5x + 6 = 0", a:"x=2,x=3" },
+  { q:"Solve: 3x² - 12x + 12 = 0", a:"x=2" },
+  { q:"Solve: (x-1)(x² + x + 1) = 0", a:"x=1" },
+  { q:"Solve: (2x+3)(3x+1) = 0", a:"x=-3/2,x=-1/3" },
+  { q:"Solve: x² - 4 = 0", a:"x=2,x=-2" },
+  { q:"Solve: (x+5)(x-2) = 0", a:"x=-5,x=2" },
+  { q:"Solve: x² + x - 12 = 0", a:"x=-4,x=3" }
+];
+
+/* ---------------- Rendering: place items into the 3 ordered lists ---------------- */
+function renderSection(listId, arr) {
+  const ol = document.getElementById(listId);
+  ol.innerHTML = "";
+  arr.forEach((it, i) => {
+    const li = document.createElement('li');
+    li.style.marginBottom = "8px";
+
+    const qRow = document.createElement('div');
+    qRow.className = 'question-row';
+
+    // question text
+    const qText = document.createElement('div');
+    qText.style.minWidth = '200px';
+    qText.style.fontWeight = '600';
+    qText.innerHTML = toSup(it.q);
+    qRow.appendChild(qText);
+
+    // input area
+    if (it.choices) {
+      const options = document.createElement('div');
+      options.className = 'options-wrap';
+      it.choices.forEach((ch, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'form-check form-check-inline';
+        wrap.style.marginRight = '18px';
+
+        const r = document.createElement('input');
+        r.type = 'radio';
+        r.className = 'form-check-input';
+        r.name = `${listId}_${i}`;
+        r.id = `${listId}_${i}_c${idx}`;
+        r.value = toSup(ch);
+
+        const lbl = document.createElement('label');
+        lbl.htmlFor = r.id;
+        lbl.className = 'form-check-label';
+        lbl.innerHTML = toSup(ch);
+
+        wrap.appendChild(r);
+        wrap.appendChild(lbl);
+        options.appendChild(wrap);
+      });
+      qRow.appendChild(options);
+    } else if (listId === 'tfList') {
+      const options = document.createElement('div');
+      options.className = 'options-wrap';
+      ['True','False'].forEach((v, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'form-check form-check-inline';
+        wrap.style.marginRight = '18px';
+        const r = document.createElement('input');
+        r.type = 'radio';
+        r.className = 'form-check-input';
+        r.name = `${listId}_${i}`;
+        r.id = `${listId}_${i}_tf${idx}`;
+        r.value = v;
+        const lbl = document.createElement('label');
+        lbl.className = 'form-check-label';
+        lbl.htmlFor = r.id;
+        lbl.innerText = v;
+        wrap.appendChild(r);
+        wrap.appendChild(lbl);
+        options.appendChild(wrap);
+      });
+      qRow.appendChild(options);
+    } else {
+      // solve: text input
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'form-control d-inline w-auto';
+      inp.name = `${listId}_${i}`;
+      inp.placeholder = 'e.g. x=2,x=-1';
+      qRow.appendChild(inp);
+    }
+
+    // feedback placeholder
+    const fb = document.createElement('div');
+    fb.className = 'feedback-wrap';
+
+    li.appendChild(qRow);
+    li.appendChild(fb);
+    ol.appendChild(li);
+  });
+}
+
+/* Render all sections */
+renderSection('mcqList', mcq);
+renderSection('tfList', tf);
+renderSection('solveList', solve);
+
+/* ---------------- Grading & feedback ---------------- */
+function getAnswerFromElement(name) {
+  const els = document.getElementsByName(name);
+  if (!els || els.length === 0) return "";
+  const first = els[0];
+  if (first.type === 'radio') {
+    for (const r of els) if (r.checked) return r.value;
+    return "";
+  } else {
+    return first.value;
+  }
+}
+
+function normalizeForCompare(s) {
+  if (s === undefined || s === null) return "";
+  return normalize(s);
+}
+
+function showFeedbackFor(listId, idx, userRaw, canonical) {
+  const ol = document.getElementById(listId);
+  const li = ol.children[idx];
+  const fbWrap = li.querySelector('.feedback-wrap');
+  fbWrap.innerHTML = "";
+
+  const stud = document.createElement('div');
+  stud.className = 'student';
+  stud.textContent = `Your: ${ (userRaw && String(userRaw).trim() !== "") ? userRaw : "(blank)" }`;
+
+  const corr = document.createElement('div');
+  const canonicalDisplay = toSup(canonical);
+  const normUser = normalizeForCompare(userRaw);
+  const normCanon = normalizeForCompare(canonical);
+
+  if (normUser !== "" && normUser === normCanon) {
+    corr.className = 'correct';
+    corr.textContent = `Correct ✓ (${canonicalDisplay})`;
+  } else {
+    corr.className = 'incorrect';
+    corr.textContent = `Answer ✗ (${canonicalDisplay})`;
+  }
+
+  fbWrap.appendChild(stud);
+  fbWrap.appendChild(corr);
+}
+
+/* Main check function: iterate all sections */
+function checkAnswers() {
+  // clear previous feedback
+  document.querySelectorAll('.feedback-wrap').forEach(fb => fb.innerHTML = "");
+
+  let score = 0;
+  let total = mcq.length + tf.length + solve.length;
+
+  // MCQ
+  mcq.forEach((it, i) => {
+    const name = `mcqList_${i}`;
+    const user = getAnswerFromElement(name);
+    const normUser = normalizeForCompare(user);
+    const normCorrect = normalizeForCompare(it.a);
+    if (normUser !== "" && normUser === normCorrect) score++;
+    showFeedbackFor('mcqList', i, user, it.a);
+  });
+
+  // TF (note their indices start at 0 within the tfList)
+  tf.forEach((it, i) => {
+    const name = `tfList_${i}`;
+    const user = getAnswerFromElement(name);
+    const normUser = normalizeForCompare(user);
+    const normCorrect = normalizeForCompare(it.a);
+    if (normUser !== "" && normUser === normCorrect) score++;
+    showFeedbackFor('tfList', i, user, it.a);
+  });
+
+  // Solve
+  solve.forEach((it, i) => {
+    const name = `solveList_${i}`;
+    const user = getAnswerFromElement(name);
+    // For solving items, accept different orders — normalize by removing spaces and commas order-insensitively:
+    const normUser = normalizeForCompare(user).replace(/\s/g,'');
+    // Normalize canonical similarly; canonical uses commas with no spaces
+    const normCanon = normalizeForCompare(it.a).replace(/\s/g,'');
+    // Allow reorder: split by comma and compare sets
+    function splitSet(str) {
+      if (!str) return [];
+      return str.split(',').map(s => s.trim()).filter(Boolean).map(s => s.toLowerCase()).sort();
+    }
+    const uSet = splitSet(user.replace(/\s/g,'')) ;
+    const cSet = splitSet(it.a.replace(/\s/g,'')) ;
+    let correctSolve = false;
+    if (uSet.length > 0 && cSet.length > 0 && uSet.length === cSet.length) {
+      correctSolve = (JSON.stringify(uSet) === JSON.stringify(cSet));
+    } else {
+      // fallback: direct normalized string match
+      correctSolve = (normUser !== "" && normUser === normCanon);
+    }
+
+    if (correctSolve) score++;
+    // show feedback: show what student wrote, and canonical
+    showFeedbackFor('solveList', i, user, it.a);
+  });
+
+  // Score box
+  const prev = document.querySelector('.scoreBox');
+  if (prev) prev.remove();
+  const sb = document.createElement('div');
+  sb.className = 'scoreBox';
+  sb.textContent = `Score: ${score} / ${total}  — (${ Math.round(score/total*100) }%)`;
+  document.querySelector('.btn-submit').insertAdjacentElement('beforebegin', sb);
+  sb.scrollIntoView({behavior:'smooth', block:'center'});
+}
+</script>
+</body>
+</html>
